@@ -1,0 +1,10 @@
+mistralai
+pypdf
+python-docx
+beautifulsoup4
+requests
+click
+rich
+python-dotenv
+flask
+gunicorn

@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Idea Generator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="page-shell">
+        <header class="hero">
+            <nav class="topbar">
+                <div class="brand-pill">AI Idea Generator</div>
+                <div class="topbar-meta">Modern Flask UI · Better than the old single-page prototype</div>
+            </nav>
+
+            <div class="hero-grid">
+                <div>
+                    <span class="eyebrow">Concept Discovery</span>
+                    <h1>Turn technical content into polished product concepts.</h1>
+                    <p class="hero-copy">
+                        Upload a document or paste a URL, then generate structured ideas with a practical stack,
+                        target users, and a clear first milestone.
+                    </p>
+                    <div class="hero-stats">
+                        <div class="stat-card">
+                            <strong>PDF · DOCX · MD</strong>
+                            <span>Document analysis</span>
+                        </div>
+                        <div class="stat-card">
+                            <strong>Curated ideas</strong>
+                            <span>Product-ready output</span>
+                        </div>
+                        <div class="stat-card">
+                            <strong>Markdown export</strong>
+                            <span>Easy handoff</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="hero-panel">
+                    <div class="panel-label">Why this version is better</div>
+                    <ul class="hero-list">
+                        <li>More refined layout and typography</li>
+                        <li>Real cards instead of default widget styling</li>
+                        <li>Clearer source flow and richer results</li>
+                        <li>Cleaner export and context preview</li>
+                    </ul>
+                </div>
+            </div>
+        </header>
+
+        <main class="content-grid">
+            <section class="form-section glass-card">
+                <div class="section-head">
+                    <div>
+                        <span class="section-kicker">Input</span>
+                        <h2>Generate new ideas</h2>
+                    </div>
+                    <p>Choose your source, set the focus, and generate a stronger set of concepts.</p>
+                </div>
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        <div class="flash-stack">
+                            {% for category, message in messages %}
+                                <div class="flash flash-{{ category }}">{{ message }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+
+                <form method="post" enctype="multipart/form-data" class="idea-form">
+                    <div class="field-grid two-col">
+                        <label class="field">
+                            <span>Mistral API key</span>
+                            <input type="password" name="api_key" value="{{ form_data.api_key }}" placeholder="Enter your Mistral API key" required>
+                        </label>
+                        <label class="field">
+                            <span>Idea count</span>
+                            <input type="range" name="idea_count" min="3" max="8" value="{{ form_data.idea_count }}" oninput="this.nextElementSibling.value = this.value">
+                            <output>{{ form_data.idea_count }}</output>
+                        </label>
+                    </div>
+
+                    <div class="field-grid two-col">
+                        <label class="field">
+                            <span>Focus area</span>
+                            <select name="focus_area">
+                                {% for option in focus_options %}
+                                    <option value="{{ option }}" {% if option == form_data.focus_area %}selected{% endif %}>{{ option }}</option>
+                                {% endfor %}
+                            </select>
+                        </label>
+                        <fieldset class="field source-switcher">
+                            <span>Source type</span>
+                            <div class="segmented-control">
+                                <label>
+                                    <input type="radio" name="source_mode" value="document" {% if form_data.source_mode != 'url' %}checked{% endif %}>
+                                    <span>Document</span>
+                                </label>
+                                <label>
+                                    <input type="radio" name="source_mode" value="url" {% if form_data.source_mode == 'url' %}checked{% endif %}>
+                                    <span>URL</span>
+                                </label>
+                            </div>
+                        </fieldset>
+                    </div>
+
+                    <div class="field-grid source-panels">
+                        <label class="field source-panel" data-mode="document">
+                            <span>Upload document</span>
+                            <input type="file" name="document" accept=".pdf,.docx,.txt,.md">
+                            <small>Supports PDF, DOCX, TXT, and Markdown.</small>
+                        </label>
+                        <label class="field source-panel" data-mode="url">
+                            <span>Paste article or docs URL</span>
+                            <input type="url" name="url_input" value="{{ form_data.url_input }}" placeholder="https://example.com/article">
+                            <small>Use a technical article, docs page, or long-form write-up.</small>
+                        </label>
+                    </div>
+
+                    <button type="submit" class="primary-btn">Generate project ideas</button>
+                </form>
+            </section>
+
+            <aside class="sidebar-stack">
+                <section class="glass-card sidebar-card">
+                    <span class="section-kicker">Workflow</span>
+                    <h3>How it works</h3>
+                    <ol>
+                        <li>Provide a technical source.</li>
+                        <li>Extract meaningful context.</li>
+                        <li>Generate distinct ideas with implementation direction.</li>
+                    </ol>
+                </section>
+                <section class="glass-card sidebar-card">
+                    <span class="section-kicker">Tips</span>
+                    <h3>Get better results</h3>
+                    <ul>
+                        <li>Use specific, information-dense content.</li>
+                        <li>Pick a focus area when you want tighter outputs.</li>
+                        <li>Longer technical context usually improves idea quality.</li>
+                    </ul>
+                </section>
+            </aside>
+        </main>
+
+        <section class="results-zone">
+            {% if results %}
+                <div class="results-head">
+                    <div>
+                        <span class="section-kicker">Output</span>
+                        <h2>Generated ideas</h2>
+                        <p>Source: {{ source_label }}{% if generated_at %} · {{ generated_at.strftime('%Y-%m-%d %H:%M') }}{% endif %}</p>
+                    </div>
+                    <form method="post" action="{{ url_for('download_markdown') }}">
+                        <textarea name="markdown_export" hidden>{{ markdown_export }}</textarea>
+                        <button type="submit" class="secondary-btn">Download markdown</button>
+                    </form>
+                </div>
+
+                <div class="metric-row">
+                    <div class="metric-card">
+                        <span>Total ideas</span>
+                        <strong>{{ results|length }}</strong>
+                    </div>
+                    <div class="metric-card">
+                        <span>Focus area</span>
+                        <strong>{{ form_data.focus_area }}</strong>
+                    </div>
+                    <div class="metric-card">
+                        <span>Context preview</span>
+                        <strong>{{ context_preview|length }} chars</strong>
+                    </div>
+                </div>
+
+                <div class="cards-grid">
+                    {% for idea in results %}
+                        <article class="idea-card glass-card">
+                            <div class="idea-topline">
+                                <span class="idea-index">{{ '%02d' % loop.index }}</span>
+                                <h3>{{ idea['project-title'] }}</h3>
+                            </div>
+                            <div class="badge-row">
+                                {% for badge in render_stack_badges(idea['tech-stack']) %}
+                                    <span class="badge">{{ badge }}</span>
+                                {% endfor %}
+                            </div>
+                            <p class="idea-description">{{ idea['description'] }}</p>
+                            <div class="idea-meta-block">
+                                <h4>Target users</h4>
+                                <p>{{ idea['target-users'] }}</p>
+                            </div>
+                            <div class="idea-meta-block">
+                                <h4>First milestone</h4>
+                                <p>{{ idea['first-milestone'] }}</p>
+                            </div>
+                            {% if idea['references'] %}
+                            <div class="idea-meta-block">
+                                <h4>Getting Started References</h4>
+                                <ul class="reference-list">
+                                    {% for ref in idea['references'] %}
+                                        <li><a href="{{ ref.get('url', '#') }}" target="_blank" rel="noopener noreferrer">{{ ref.get('title', 'Reference') }}</a></li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            {% endif %}
+                        </article>
+                    {% endfor %}
+                </div>
+
+                <details class="context-preview glass-card">
+                    <summary>Preview extracted context</summary>
+                    <pre>{{ context_preview }}</pre>
+                </details>
+            {% else %}
+                <section class="empty-state glass-card">
+                    <span class="section-kicker">Ready</span>
+                    <h2>No ideas yet</h2>
+                    <p>Generate a run to see polished concept cards, richer summaries, and a downloadable report.</p>
+                </section>
+            {% endif %}
+        </section>
+    </div>
+
+    <script>
+        const syncSourcePanels = () => {
+            const activeMode = document.querySelector('input[name="source_mode"]:checked')?.value || 'document';
+            document.querySelectorAll('.source-panel').forEach((panel) => {
+                panel.classList.toggle('hidden-panel', panel.dataset.mode !== activeMode);
+            });
+        };
+
+        document.querySelectorAll('input[name="source_mode"]').forEach((input) => {
+            input.addEventListener('change', syncSourcePanels);
+        });
+
+        syncSourcePanels();
+    </script>
+</body>
+</html>
