@@ -28,6 +28,14 @@ FOCUS_OPTIONS = [
     "Consumer apps",
     "Internal operations",
 ]
+MODEL_OPTIONS = [
+    ("mistral-small-latest", "Mistral Small (Free & Paid - Recommended)"),
+    ("open-mistral-nemo", "Mistral NeMo 12B (Free Tier)"),
+    ("mistral-large-latest", "Mistral Large (Paid Tier)"),
+    ("ministral-8b-latest", "Ministral 8B"),
+    ("codestral-latest", "Codestral (Code focus)"),
+]
+
 
 
 def is_valid_url(value: str) -> bool:
@@ -112,6 +120,7 @@ def index():
         "api_key": os.getenv("MISTRAL_API_KEY", ""),
         "idea_count": 5,
         "focus_area": "General",
+        "model_name": os.getenv("MISTRAL_MODEL", "mistral-small-latest"),
         "source_mode": "document",
         "url_input": "",
     }
@@ -120,6 +129,7 @@ def index():
         form_data["api_key"] = request.form.get("api_key", "").strip()
         form_data["idea_count"] = parse_idea_count(request.form.get("idea_count", 5))
         form_data["focus_area"] = request.form.get("focus_area", "General")
+        form_data["model_name"] = request.form.get("model_name", os.getenv("MISTRAL_MODEL", "mistral-small-latest")).strip()
         form_data["source_mode"] = request.form.get("source_mode", "document")
         form_data["url_input"] = request.form.get("url_input", "").strip()
 
@@ -128,6 +138,7 @@ def index():
             return render_template(
                 "index.html",
                 focus_options=FOCUS_OPTIONS,
+                model_options=MODEL_OPTIONS,
                 form_data=form_data,
                 results=results,
                 context_preview=context_preview,
@@ -139,7 +150,7 @@ def index():
 
         try:
             parser = SourceParser()
-            client = MistralClient(api_key=form_data["api_key"])
+            client = MistralClient(api_key=form_data["api_key"], model_name=form_data["model_name"])
 
             if form_data["source_mode"] == "url":
                 if not form_data["url_input"] or not is_valid_url(form_data["url_input"]):
@@ -177,7 +188,14 @@ def index():
             generated_at = datetime.now()
             context_preview = context[:3000] + ("..." if len(context) > 3000 else "")
             markdown_export = build_markdown_export(results, source_label, generated_at, form_data["focus_area"])
-            flash(f"Generated {len(results)} idea candidates.", "success")
+            if client.fallback_triggered:
+                flash(
+                    f"Generated {len(results)} idea candidates using fallback model '{client.last_used_model}' "
+                    f"(requested '{form_data['model_name']}' was restricted in your tier).",
+                    "warning",
+                )
+            else:
+                flash(f"Generated {len(results)} idea candidates using {client.last_used_model}.", "success")
         except ValueError:
             if not results and not markdown_export:
                 context_preview = ""
@@ -189,6 +207,7 @@ def index():
     return render_template(
         "index.html",
         focus_options=FOCUS_OPTIONS,
+        model_options=MODEL_OPTIONS,
         form_data=form_data,
         results=results,
         context_preview=context_preview,
@@ -207,10 +226,12 @@ def download_markdown():
         return render_template(
             "index.html",
             focus_options=FOCUS_OPTIONS,
+            model_options=MODEL_OPTIONS,
             form_data={
                 "api_key": os.getenv("MISTRAL_API_KEY", ""),
                 "idea_count": 5,
                 "focus_area": "General",
+                "model_name": os.getenv("MISTRAL_MODEL", "mistral-small-latest"),
                 "source_mode": "document",
                 "url_input": "",
             },

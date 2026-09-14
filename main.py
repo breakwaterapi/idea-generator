@@ -52,10 +52,11 @@ def save_to_markdown(ideas, output_file="projects.md"):
 @click.argument('source', type=str)
 @click.option('--output', '-o', default='projects.md', help='Output markdown file path')
 @click.option('--api-key', help='Mistral API Key (overrides env var)')
+@click.option('--model', '-m', default=None, help='Mistral model (default: mistral-small-latest or env MISTRAL_MODEL)')
 @click.option('--ideas', '-n', default=5, show_default=True, help='Number of project ideas to generate')
 @click.option('--focus', default=None, help='Optional product focus area, e.g. "Developer tools" or "B2B SaaS"')
 @click.option('--verbose', '-v', is_flag=True, help='Enable verbose logging')
-def generate(source, output, api_key, ideas, focus, verbose):
+def generate(source, output, api_key, model, ideas, focus, verbose):
     """
     Generate professional project ideas from a DOCUMENT or URL.
     
@@ -66,7 +67,7 @@ def generate(source, output, api_key, ideas, focus, verbose):
 
     try:
         parser = SourceParser()
-        client = MistralClient(api_key=api_key)
+        client = MistralClient(api_key=api_key, model_name=model)
 
         with Progress(
             SpinnerColumn(),
@@ -85,9 +86,14 @@ def generate(source, output, api_key, ideas, focus, verbose):
                 return
 
             # Step 2: Generation
-            task2 = progress.add_task(description="Consulting AI for project ideas...", total=None)
+            task2 = progress.add_task(description=f"Consulting AI for project ideas (model: {client.model_id})...", total=None)
             generated_ideas = client.generate_project_ideas(context, idea_count=ideas, focus_area=focus)
             progress.update(task2, completed=True, description="Generation complete.")
+
+            if client.fallback_triggered:
+                console.print(f"[yellow]Notice:[/yellow] Model '{client.model_id}' was restricted; auto-fell back to [bold green]{client.last_used_model}[/bold green].")
+            else:
+                console.print(f"[dim]Generated using model: {client.last_used_model}[/dim]")
 
             # Step 3: Saving
             save_to_markdown(generated_ideas, output)

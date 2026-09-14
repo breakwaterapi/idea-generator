@@ -87,6 +87,15 @@
 
                     <div class="field-grid two-col">
                         <label class="field">
+                            <span>Mistral model</span>
+                            <select name="model_name">
+                                {% for model_id, model_label in model_options %}
+                                    <option value="{{ model_id }}" {% if model_id == form_data.model_name %}selected{% endif %}>{{ model_label }}</option>
+                                {% endfor %}
+                            </select>
+                            <small>Auto-falls back to free-tier models if selected model is restricted.</small>
+                        </label>
+                        <label class="field">
                             <span>Focus area</span>
                             <select name="focus_area">
                                 {% for option in focus_options %}
@@ -94,6 +103,9 @@
                                 {% endfor %}
                             </select>
                         </label>
+                    </div>
+
+                    <div class="field-grid">
                         <fieldset class="field source-switcher">
                             <span>Source type</span>
                             <div class="segmented-control">
