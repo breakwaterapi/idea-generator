@@ -3,7 +3,7 @@ import logging
 import os
 from typing import Any, Dict, List
 
-from mistralai import Mistral
+from mistralai.client import Mistral
 
 logger = logging.getLogger(__name__)
 

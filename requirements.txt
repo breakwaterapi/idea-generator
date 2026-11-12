@@ -1,4 +1,4 @@
-mistralai
+mistralai>=2
 pypdf
 python-docx
 beautifulsoup4
